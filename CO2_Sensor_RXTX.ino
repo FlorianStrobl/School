@@ -1,57 +1,59 @@
-// Coder: Florian Crafter 2020
+// Coder: Florian Crafter 2020/2021
 // This is the code to let an mhz19b co2 sensor adjust the color of an LED.
-// about 90 sec delay
+// Important: all values have about 90 sec delay
 
 // the library for the sensor
 #include <MHZ19_uart.h>
 
+// the sensor
+MHZ19_uart mhz19;
+
 // pins
-const int rx_pin = 5;	// the arduino RX pin and sensor TX pin
-const int tx_pin = 4;	// the arduino TX pin and sensor RX pin
-const int led_pins[3] = {6, 9, 3}; // the pins were the LED is on
+const byte rx_pin = 5;	// the arduino RX pin and sensor TX pin
+const byte tx_pin = 4;	// the arduino TX pin and sensor RX pin
+const byte led_pins[3] = {6, 9, 3}; // the pins were the LED is on
 
 // settings
 const bool Warm = false; // let the sensor warm at start
 const bool AutoCalibrate = false; // calibare the sensor at start
-const int Delay = 1000; // time the program waits until next LED refresh
-const int limitPPM1 = 800; // values below that, makes the LED green
-const int limitPPM2 = 1000; // values below that, makes the LED orange, and values over that makes it red
-const int limitThreshhold = 30; // +-ppm for the sensor
-
+const short Delay = 1000; // time the program waits until next LED refresh
+const short limitPPM1 = 800; // values below that, makes the LED green
+const short limitPPM2 = 1000; // values below that, makes the LED orange, and values over that makes it red
+const byte limitThreshold = 30; // +-ppm for the sensor
 // the three colors
-const int c1[3] = {0, 255, 0}; // color for state 1 (Green)
-const int c2[3] = {255, 255, 0}; // color for state 2 (Orange)
-const int c3[3] = {255, 0, 0}; // color for state 3 (Red)
-const int errorColor[3] = {0, 0, 255}; // Color for state ERROR (Blue)
+const byte c1[3] = {0, 255, 0}; // color for state 1 (Green)
+const byte c2[3] = {255, 255, 0}; // color for state 2 (Orange)
+const byte c3[3] = {255, 0, 0}; // color for state 3 (Red)
+const byte errorColor[3] = {0, 0, 255}; // Color for state ERROR (Blue)
 
 // variables
-byte firstStart = true; // check if first start
+bool firstStart = true; // bool for the first start
+int co2ppm = 0; // current co2 value in ppm
+int temp = 0; // current temperature in C
 
-// the sensor
-MHZ19_uart mhz19;
-
-// fires up on arduino start and set it right
+// fires up on arduino start and set the settigns
 void setup() {
+  // starts connection to an PC if available
   Serial.begin(9600);
 
-  // set the sensor right
+  // set the sensor settings
   mhz19.begin(rx_pin, tx_pin);
   mhz19.setAutoCalibration(AutoCalibrate);
 
-  // start animation
+  // starts the start animation
   StartAnimation();
 
-  // let the sensor warm at the start
+  // let the sensor warm up at start
   while ( mhz19.isWarming() && Warm ) {
     Serial.print("MH-Z19 now warming up - status:"); Serial.println(mhz19.getStatus());
     analogWrite(led_pins[2], 255);
     delay(Delay / 2);
-    SetNullColor();
+    SetNoColor(); // "deactivates" the LED
     delay(Delay / 2);
   }
 
   // resets the color
-  SetNullColor();
+  SetNoColor();
 
   Serial.println("start");
 }
@@ -70,8 +72,8 @@ void loop() {
   }
 
   // get data from sensor
-  int co2ppm = mhz19.getPPM();
-  int temp = mhz19.getTemperature();
+  co2ppm = mhz19.getPPM();
+  temp = mhz19.getTemperature();
 
   // print the values to the console
   Serial.print("state: "); Serial.println(mhz19.getStatus());
@@ -81,17 +83,20 @@ void loop() {
   // get the color variable acording to the ppm & set the LED color
   SetColor(GetColor(co2ppm));
 
-  if (firstStart)
+  if (firstStart) {
     firstStart = false;
+  }
 }
 
-// chose the right color for the LED
-int GetColor(int ppm) {
-  if ( ((limitPPM1 - limitThreshhold < ppm && ppm < limitPPM1 + limitThreshhold) || (limitPPM2 - limitThreshhold < ppm && ppm < limitPPM2 + limitThreshhold)) && !firstStart ) {
+// returns the color of the LED for the givin ppm
+byte GetColor(int ppm) {
+  // goes in it, if the values are in the setted threshold
+  if ( ((limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold) || (limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold)) && !firstStart ) {
     Serial.println("Values are in threashhold");
     return -1;
   }
 
+  // returns the color for the given ppm
   if (ppm < limitPPM1) {
     return 0;
   } else if (ppm >= limitPPM1 && ppm < limitPPM2) {
@@ -101,52 +106,57 @@ int GetColor(int ppm) {
   }
 }
 
-void SetColor(int c) {
+// sets the color of the LED
+void SetColor(short c) {
   Serial.print("color: ");
   switch (c) {
     case -1:
+      Serial.println("No color");
+      SetNoColor();
       break;
     case 0:
       Serial.println("Green");
-      analogWrite(led_pins[0], c1[0]);
-      analogWrite(led_pins[1], c1[1]);
-      analogWrite(led_pins[2], c1[2]);
+      for (byte i = 0; i < 3; i++) {
+        analogWrite(led_pins[i], c1[i]);
+      }
       break;
     case 1:
       Serial.println("Orange");
-      analogWrite(led_pins[0], c2[0]);
-      analogWrite(led_pins[1], c2[1]);
-      analogWrite(led_pins[2], c2[2]);
+      for (byte i = 0; i < 3; i++) {
+        analogWrite(led_pins[i], c2[i]);
+      }
       break;
     case 2:
       Serial.println("Red");
-      analogWrite(led_pins[0], c3[0]);
-      analogWrite(led_pins[1], c3[1]);
-      analogWrite(led_pins[2], c3[2]);
+      for (byte i = 0; i < 3; i++) {
+        analogWrite(led_pins[i], c3[i]);
+      }
       break;
   }
 }
 
+// sets the LED to the error color
 void ErrorColor() {
-  analogWrite(led_pins[0], errorColor[0]);
-  analogWrite(led_pins[1], errorColor[1]);
-  analogWrite(led_pins[2], errorColor[2]);
-}
-
-void SetNullColor() {
-  analogWrite(led_pins[0], 0);
-  analogWrite(led_pins[1], 0);
-  analogWrite(led_pins[2], 0);
-}
-
-void StartAnimation() {
-  for (int i = 0; i < 3; i++) {
-    analogWrite(led_pins[0], 255);
-    analogWrite(led_pins[1], 255);
-    analogWrite(led_pins[2], 255);
-    delay(500);
-    SetNullColor();
-    delay(500);
+  for (byte i = 0; i < 3; i++) {
+    analogWrite(led_pins[i], errorColor[i]);
   }
 }
 
+// sets the LED to no color
+void SetNoColor() {
+  for (byte i = 0; i < 3; i++) {
+    analogWrite(led_pins[i], 0);
+  }
+}
+
+// three white blinks from the LED
+void StartAnimation() {
+  for (byte i = 0; i < 3; i++) {
+    for (byte y = 0; y < 3; y++) {
+      analogWrite(led_pins[y], 255);
+    }
+    delay(500);
+    SetNoColor();
+    delay(500);
+  }
+}
