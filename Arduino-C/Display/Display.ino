@@ -149,5 +149,3 @@ void StartAnimation() {
 
   delay(1000);
 }
-
-
