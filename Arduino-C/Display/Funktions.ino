@@ -1,15 +1,20 @@
-void Start() {
-  Serial.begin(baut);
+void Start(int _baut, int _brightness) {
+  Serial.begin(_baut);
   strip.begin();
-  Serial.println("Start display!");
+  strip.setBrightness(_brightness);
+
+  if (includeStartAnimation) StartAnimation();
 
   pinMode(2, INPUT);
 
-  strip.setBrightness(brightness);
-  if (includeStartAnimation) {
-    StartAnimation();
-  }
-  NoColor();
+  Serial.println("Start display!");
+}
+
+// set display off
+void NoColor() {
+  for (int i = 0; i < strip.numPixels(); ++i)
+    strip.setPixelColor(i, strip.Color(0, 0, 0));
+  strip.show();
 }
 
 // checks if an integer is in an array
@@ -22,29 +27,7 @@ bool IsIntInArray(int theArray[], int value, int lenght) { // lenght = (int)( si
   return false;
 }
 
-int CoordinatenInZahl(int x, int y) {
-  return fieldSize * y + x;
-}
-
-int richtigeCoordsInXCoords(int y) {
-  return y * (-1) + 2;
-}
-
-// (0, 0) is the middle of the field
-int XYToCoords(int x, int y) {
-  int middlePoint = fieldSize * (int)(fieldSize / 2) + (int)(fieldSize / 2);
-  return fieldSize * x + middlePoint + y;
-}
-
-// sets color off
-void NoColor() {
-  for (int i = 0; i < strip.numPixels(); i++) {
-    strip.setPixelColor(i, strip.Color(0, 0, 0));
-  }
-  strip.show();
-}
-
-// set an color
+// set a color on the full display
 void SetColor(int r, int g, int b) {
   for (int i = 0; i < strip.numPixels(); i++) {
     strip.setPixelColor(i, strip.Color(r, g, b));
@@ -52,20 +35,13 @@ void SetColor(int r, int g, int b) {
   strip.show();
 }
 
-// sets the enum to the next value for the start animation
-void NextValue() {
-  switch (ourEnum) {
-    case start:
-      ourEnum = second;
-      break;
-    case second:
-      ourEnum = third;
-      break;
-    case third:
-      ourEnum = last;
-      break;
-    case last:
-      ourEnum = start;
-      break;
-  }
+// Not in use
+int CoordsToNumber(int x, int y) {
+  return fieldSize * y + x;
+}
+
+// (0, 0) is the middle of the field
+int XYToCoords(int x, int y) {
+  int middlePoint = fieldSize * (int)(fieldSize / 2) + (int)(fieldSize / 2);
+  return fieldSize * x + middlePoint + y;
 }
