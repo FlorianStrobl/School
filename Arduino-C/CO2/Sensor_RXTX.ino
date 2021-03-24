@@ -55,7 +55,7 @@ void setup() {
   // resets the color
   SetNoColor();
 
-  Serial.println("start");
+  Serial.println("start version 1.0");
 }
 
 // the loop
