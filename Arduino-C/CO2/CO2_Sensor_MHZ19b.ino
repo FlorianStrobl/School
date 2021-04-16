@@ -1,6 +1,9 @@
-// Coder: Florian Crafter 2020/2021
+// A Co2 projekct - 2020/2021
+// Coding: Florian Crafter
+// 3D Printing: Emile
+// Soldering/Logistics: Lajosh
 // This is the code to let an mhz19b co2 sensor adjust the color of an LED.
-// Important: all values have about 90 sec delay
+// Important: all values have about 90 sec delay. The sensor has a max of 5000ppm and you shouldn't use the data if the temperatur is above 50 degree.
 
 // the library for the sensor
 #include <MHZ19_uart.h>
@@ -75,7 +78,7 @@ void loop() {
   co2ppm = mhz19.getPPM();
   temp = mhz19.getTemperature();
 
-  // print the values to the console
+  // print the values
   Serial.print("state: "); Serial.println(mhz19.getStatus());
   Serial.print("co2: "); Serial.println(co2ppm);
   Serial.print("temp: "); Serial.println(temp);
@@ -90,7 +93,9 @@ void loop() {
 // returns the color of the LED for the givin ppm
 byte GetColor(int ppm) {
   // goes in it, if the values are in the setted threshold
-  if ( ((limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold) || (limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold)) && !firstStart ) {
+  bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
+  bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
+  if (firstStart == false && (threshold1 || threshold2)) {
     Serial.println("Values are in threshold");
     return -1;
   }
