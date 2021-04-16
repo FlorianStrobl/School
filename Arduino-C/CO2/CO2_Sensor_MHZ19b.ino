@@ -11,6 +11,8 @@
 // the sensor
 MHZ19_uart mhz19;
 
+const char[] currentVersion = "Version 1.2";
+
 // pins
 const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
 const byte tx_pin = 4;  // the arduino TX pin and sensor RX pin
@@ -58,7 +60,7 @@ void setup() {
   // reset the color
   SetNoColor();
 
-  Serial.println("start version 1.1");
+  Serial.println(currentVersion);
 }
 
 // the loop
@@ -85,19 +87,25 @@ void loop() {
   Serial.print("color: ");
   
   // get the color variable acording to the ppm & set the LED color (does print the color name in the console)
-  SetColor(GetColor(co2ppm));
+  SetColor(GetColor(co2ppm, temp));
 
   if (firstStart) firstStart = false;
 }
 
 // returns the color of the LED for the givin ppm
-byte GetColor(int ppm) {
+byte GetColor(int ppm, int temperatur) {
+  // high or low temperatur
+  if (temperatur >= 50 || temperatur <= 0) {
+    Serial.println("Sensor temperaturs are too high/low");
+    return 4;
+  }
+  
   // goes in it, if the values are in the setted threshold
   bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
   bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
   if (firstStart == false && (threshold1 || threshold2)) {
     Serial.println("Values are in threshold");
-    return -1;
+    return 3;
   }
 
   // returns the color for the given ppm
@@ -112,9 +120,20 @@ byte GetColor(int ppm) {
 // sets the color of the LED
 void SetColor(short c) {
   switch (c) {
-    case -1:
+    case 4:       
+      Serial.println("Wrong temperatur");
+      for (byte i = 0; i < 3; i++) {
+        for (byte y = 0; y < 3; y++)
+          analogWrite(led_pins[y], 255);
+        delay(500);
+    
+        SetNoColor();
+        delay(500);
+      }
+      break;
+    case 3:
       Serial.println("No color");
-      SetNoColor();
+      // last color
       break;
     case 0:
       Serial.println("Green");
@@ -152,6 +171,7 @@ void StartAnimation() {
     for (byte y = 0; y < 3; y++)
       analogWrite(led_pins[y], 255);
     delay(500);
+    
     SetNoColor();
     delay(500);
   }
