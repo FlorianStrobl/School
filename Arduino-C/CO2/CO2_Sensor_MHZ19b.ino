@@ -11,7 +11,7 @@
 // the sensor
 MHZ19_uart mhz19;
 
-const char[] currentVersion = "Version 1.2";
+const String currentVersion = "Version 1.2";
 
 // pins
 const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
@@ -85,7 +85,7 @@ void loop() {
   Serial.print("co2: "); Serial.println(co2ppm);
   Serial.print("temp: "); Serial.println(temp);
   Serial.print("color: ");
-  
+
   // get the color variable acording to the ppm & set the LED color (does print the color name in the console)
   SetColor(GetColor(co2ppm, temp));
 
@@ -99,7 +99,7 @@ byte GetColor(int ppm, int temperatur) {
     Serial.println("Sensor temperaturs are too high/low");
     return 4;
   }
-  
+
   // goes in it, if the values are in the setted threshold
   bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
   bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
@@ -120,13 +120,13 @@ byte GetColor(int ppm, int temperatur) {
 // sets the color of the LED
 void SetColor(short c) {
   switch (c) {
-    case 4:       
+    case 4:
       Serial.println("Wrong temperatur");
       for (byte i = 0; i < 3; i++) {
         for (byte y = 0; y < 3; y++)
           analogWrite(led_pins[y], 255);
         delay(500);
-    
+
         SetNoColor();
         delay(500);
       }
@@ -137,7 +137,7 @@ void SetColor(short c) {
       break;
     case 0:
       Serial.println("Green");
-      for (byte i = 0; i < 3; i++) 
+      for (byte i = 0; i < 3; i++)
         analogWrite(led_pins[i], c1[i]);
       break;
     case 1:
@@ -171,7 +171,7 @@ void StartAnimation() {
     for (byte y = 0; y < 3; y++)
       analogWrite(led_pins[y], 255);
     delay(500);
-    
+
     SetNoColor();
     delay(500);
   }
