@@ -1,3 +1,5 @@
+// https://pages.github.com/
+
 const internal = {
   monitoringLed: 1 << 0,
   monitoringDisplay: 1 << 1,
