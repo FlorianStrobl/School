@@ -6,7 +6,6 @@
 let input = ["monitoringDisplay", "boxSizeSmall", "saveNo"];
 let input2 = 5;
 
-const version = 1;
 const produktCo2 = 1;
 
 const lengths = {
@@ -18,54 +17,56 @@ const lengths = {
   parity: 1,
 };
 
-const internal = {
+const co2Config = {
+  prodId: 1,
   monitoringLed: {
-    position: 0,
-    value: 0,
+    internPos: 0,
+    internVal: 0,
     needs: [],
     donts: ["monitoringDisplay"],
+    description: "Um den CO2 Wert auszulesen nutzt man eine LED."
   },
   monitoringDisplay: {
-    position: 0,
-    value: 1,
+    internPos: 0,
+    internVal: 1,
     needs: [],
     donts: ["monitoringLed"],
   },
-  boxSizeSmall: { position: 1, value: 0, needs: [], donts: ["boxSizeBig"] },
-  boxSizeBig: { position: 1, value: 1, needs: [], donts: ["boxSizeSmall"] },
-  saveNo: { position: 3, value: 0, needs: [], donts: ["saveYes"] },
-  saveYes: { position: 3, value: 1, needs: [], donts: ["saveNo"] },
+  boxSizeSmall: { internPos: 1, internVal: 0, needs: [], donts: ["boxSizeBig"] },
+  boxSizeBig: { internPos: 1, internVal: 1, needs: [], donts: ["boxSizeSmall"] },
+  saveNo: { internPos: 3, internVal: 0, needs: [], donts: ["saveYes"] },
+  saveYes: { internPos: 3, internVal: 1, needs: [], donts: ["saveNo"] },
   colorGray: {
-    position: 4,
-    value: 1,
+    internPos: 4,
+    internVal: 1,
     needs: [],
     donts: ["colorWhite", "colorBlack", "colorTransparent"],
   },
   colorWhite: {
-    position: 5,
-    value: 1,
+    internPos: 5,
+    internVal: 1,
     needs: [],
     donts: ["colorGray", "colorBlack", "colorTransparent"],
   },
   colorBlack: {
-    position: 6,
-    value: 1,
+    internPos: 6,
+    internVal: 1,
     needs: [],
     donts: ["colorGray", "colorWhite", "colorTransparent"],
   },
   colorTransparent: {
-    position: 7,
-    value: 1,
+    internPos: 7,
+    internVal: 1,
     needs: [],
     donts: ["colorGray", "colorWhite", "colorBlack"],
   },
 };
 
 // @ts-ignore
-function MeaningToNumber(prod, m, count) {
+function MeaningToNumber(prod, m, count, version) {
   let n = 0;
 
-  // set ver
+  // set version
   n = setBits(n, version);
 
   // set product number
@@ -80,9 +81,9 @@ function MeaningToNumber(prod, m, count) {
 
   // set config
   let config = 0;
-  for (let [key, value] of Object.entries(internal))
+  for (let [key, value] of Object.entries(co2Config))
     if (m.includes(key))
-      config = setBits(config, value.value << value.position); // get config data
+      config = setBits(config, value.internVal << value.internPos); // get config data
   n = setBits(
     n,
     config << (lengths.ver + lengths.prod + lengths.id + lengths.count)
@@ -152,10 +153,8 @@ function NumberToMeaning(n) {
   console.log("5", n.toString(2));
 
   // get config
-  for (let [key, value] of Object.entries(internal))
-    if (getBit(n, value.position) == value.value) str += ", " + key;
-
-  // n & (value.value << value.position)) == value.value << value.position)
+  for (let [key, value] of Object.entries(co2Config))
+    if (getBit(n, value.internPos) == value.internVal) str += ", " + key;
 
   return str;
 }
@@ -192,7 +191,7 @@ const getParity = (n) => ((n.toString(2).split("1") ?? []).length - 1) & 1;
 // #endregion
 
 console.log("input: " + input.toString());
-const output = MeaningToNumber(produktCo2, input, input2);
+const output = MeaningToNumber(produktCo2, input, input2, 1);
 console.log(
   output + " (" + output.toString(2) + ") => " + NumberToMeaning(output)
 );
