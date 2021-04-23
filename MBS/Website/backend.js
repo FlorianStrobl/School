@@ -61,6 +61,7 @@ const internal = {
   },
 };
 
+// @ts-ignore
 function MeaningToNumber(prod, m, count) {
   let n = 0;
 
@@ -101,6 +102,7 @@ function MeaningToNumber(prod, m, count) {
   return n;
 }
 
+// @ts-ignore
 function NumberToMeaning(n) {
   let str = "";
 
@@ -159,26 +161,33 @@ function NumberToMeaning(n) {
 }
 
 // #region bit manipulation
+// @ts-ignore
 const setBits = (n, bits) => n | bits;
 
+// @ts-ignore
 const getBit = (n, pos) => (n & (1 << pos)) >> pos;
 
+// @ts-ignore
 const getBits = function (n, posStart, count) {
   let bits = 0;
   for (let i = posStart; i < posStart + count; ++i) bits |= getBit(n, i) << i;
   return bits >> posStart;
 };
 
+// @ts-ignore
 const clearBit = (n, pos) => n & ~(1 << pos);
 
+// @ts-ignore
 const clearBits = function (n, posStart, count) {
   for (let i = posStart; i < posStart + count; ++i) n = clearBit(n, i);
   return n;
 };
 
+// @ts-ignore
 const removeBits = (n, posStart, count) =>
   clearBits(n, posStart, count) >> count;
 
+// @ts-ignore
 const getParity = (n) => ((n.toString(2).split("1") ?? []).length - 1) & 1;
 // #endregion
 
