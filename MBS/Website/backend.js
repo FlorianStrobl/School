@@ -165,6 +165,7 @@ function NumberToMeaning(productConfig, n) {
   n = removeBits(n, 0, lengths.count);
 
   // get config
+  str += ", Config: [";
   for (let [key, value] of Object.entries(productConfig))
     // @ts-ignore
     if (value.internPos !== undefined && getBit(n, value.internPos) == value.internVal) str += ", " + key;
@@ -173,7 +174,7 @@ function NumberToMeaning(productConfig, n) {
 
   // get parity
   str +=
-    ", Parity: " +
+    "], Parity: " +
     getBits(
       n,
       0,
