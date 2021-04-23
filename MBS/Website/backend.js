@@ -3,7 +3,7 @@
 // 0 0000000000 0000000 00000 0000 0000
 // p   config    count   id   prod. ver
 
-let input = ["monitoringDisplay", "boxSizeSmall", "cableSizeOneM", "saveNo"];
+let input = ["monitoringDisplay", "boxSizeSmall", "saveNo"];
 let input2 = 5;
 
 const version = 1;
@@ -33,8 +33,6 @@ const internal = {
   },
   boxSizeSmall: { position: 1, value: 0, needs: [], donts: ["boxSizeBig"] },
   boxSizeBig: { position: 1, value: 1, needs: [], donts: ["boxSizeSmall"] },
-  cableSizeOneM: { position: 2, value: 0, needs: [], donts: ["cableSizeTwoM"] },
-  cableSizeTwoM: { position: 2, value: 1, needs: [], donts: ["cableSizeOneM"] },
   saveNo: { position: 3, value: 0, needs: [], donts: ["saveYes"] },
   saveYes: { position: 3, value: 1, needs: [], donts: ["saveNo"] },
   colorGray: {
