@@ -4,19 +4,11 @@
 // p   config    count   id   prod. ver
 
 const buyConfig = {
-  count: 5,
+  count: 2,
   config: ["monitoringDisplay", "boxSizeSmall", "saveNo"]
 };
 
-const lengths = {
-  ver: 4,
-  prod: 4,
-  id: 5,
-  count: 7,
-  config: 10,
-  parity: 1,
-};
-
+// #region main
 const co2Config = {
   productId: 1,
   monitoringLed: {
@@ -94,9 +86,14 @@ const co2Config = {
 
 };
 
-function GenerateId() {
-  return Math.floor(Math.random() * (Math.pow(2, lengths.id) + 1)); // generate random id
-}
+const lengths = {
+  ver: 4,
+  prod: 4,
+  id: 5,
+  count: 7,
+  config: 10,
+  parity: 1,
+};
 
 // @ts-ignore
 function MeaningToNumber(productConfig, buyConfig, version) {
@@ -189,6 +186,11 @@ function NumberToMeaning(productConfig, n) {
 
   return str;
 }
+
+function GenerateId() {
+  return Math.floor(Math.random() * (Math.pow(2, lengths.id) + 1)); // generate random id
+}
+// #endregion
 
 // #region bit manipulation
 // @ts-ignore
