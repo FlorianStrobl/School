@@ -1,89 +1,126 @@
-// Florian Crafter 1.1
+// Florian Crafter 1.2
 
 // 0 0000000000 0000000 00000 0000 0000
 // p   config    count   id   prod. ver
 
-let input = ["monitoringDisplay", "boxSizeSmall", "saveNo"];
-let input2 = 5;
-
-const produktCo2 = 1;
+const buyConfig = {
+  count: 5,
+  config: ["monitoringDisplay", "boxSizeSmall", "saveNo"]
+};
 
 const lengths = {
   ver: 4,
   prod: 4,
   id: 5,
   count: 7,
-  congfig: 10,
+  config: 10,
   parity: 1,
 };
 
 const co2Config = {
-  prodId: 1,
+  productId: 1,
   monitoringLed: {
     internPos: 0,
     internVal: 0,
-    needs: [],
-    donts: ["monitoringDisplay"],
-    description: "Um den CO2 Wert auszulesen nutzt man eine LED."
+    externNeeds: [],
+    externDonts: ["monitoringDisplay"],
+    description: "Um den CO2 Wert auszulesen nutzt man eine LED.",
+    picture: "",
   },
   monitoringDisplay: {
     internPos: 0,
     internVal: 1,
-    needs: [],
-    donts: ["monitoringLed"],
+    externNeeds: [],
+    externDonts: ["monitoringLed"],    
+    description: "Um den CO2 Wert auszulesen nutzt man ein LCD Display.",
+    picture: "",
   },
-  boxSizeSmall: { internPos: 1, internVal: 0, needs: [], donts: ["boxSizeBig"] },
-  boxSizeBig: { internPos: 1, internVal: 1, needs: [], donts: ["boxSizeSmall"] },
-  saveNo: { internPos: 3, internVal: 0, needs: [], donts: ["saveYes"] },
-  saveYes: { internPos: 3, internVal: 1, needs: [], donts: ["saveNo"] },
+  boxSizeSmall: { 
+    internPos: 1, 
+    internVal: 0, 
+    externNeeds: [], 
+    externDonts: ["boxSizeBig"],    
+    description: "Nutze eine große Box.",
+    picture: "",
+  },
+  boxSizeBig: { 
+    internPos: 1, 
+    internVal: 1, 
+    externNeeds: [], 
+    externDonts: ["boxSizeSmall"],
+    description: "Nutze eine kleine Box.",
+    picture: "",
+    },
+  saveNo: { 
+    internPos: 3, 
+    internVal: 0, 
+    externNeeds: [], 
+    externDonts: ["saveYes"],    
+    description: "Speichere die Daten auf eine SD-Karte. SD-Karte NICHT inkludiert!",
+    picture: "",
+  },
+  saveYes: { 
+    internPos: 3, 
+    internVal: 1, 
+    externNeeds: [], 
+    externDonts: ["saveNo"],    
+    description: "Speichere nicht die Daten.",
+    picture: "",
+  },
   colorGray: {
     internPos: 4,
     internVal: 1,
-    needs: [],
-    donts: ["colorWhite", "colorBlack", "colorTransparent"],
+    externNeeds: [],
+    externDonts: ["colorWhite", "colorBlack"],
+    description: "Habe eine graue Box.",
+    picture: "",
   },
   colorWhite: {
     internPos: 5,
     internVal: 1,
-    needs: [],
-    donts: ["colorGray", "colorBlack", "colorTransparent"],
+    externNeeds: [],
+    externDonts: ["colorGray", "colorBlack"],
+    description: "Habe eine weiße Box.",
+    picture: "",
   },
   colorBlack: {
     internPos: 6,
     internVal: 1,
-    needs: [],
-    donts: ["colorGray", "colorWhite", "colorTransparent"],
+    externNeeds: [],
+    externDonts: ["colorGray", "colorWhite"],
+    description: "Habe eine schwarze Box.",
+    picture: "",
   },
-  colorTransparent: {
-    internPos: 7,
-    internVal: 1,
-    needs: [],
-    donts: ["colorGray", "colorWhite", "colorBlack"],
-  },
+
 };
 
+function GenerateId() {
+  return Math.floor(Math.random() * (Math.pow(2, lengths.id) + 1)); // generate random id
+}
+
 // @ts-ignore
-function MeaningToNumber(prod, m, count, version) {
+function MeaningToNumber(productConfig, buyConfig, version) {
   let n = 0;
 
   // set version
   n = setBits(n, version);
 
   // set product number
-  n = setBits(n, prod << lengths.ver);
+  n = setBits(n, productConfig.productId << lengths.ver);
 
   // set id
-  let id = Math.floor(Math.random() * (Math.pow(2, lengths.id) + 1)); // generate random id
-  n = setBits(n, id << (lengths.ver + lengths.prod));
+  n = setBits(n, GenerateId() << (lengths.ver + lengths.prod));
 
   // set count
-  n = setBits(n, count << (lengths.ver + lengths.prod + lengths.id));
+  n = setBits(n, buyConfig.count << (lengths.ver + lengths.prod + lengths.id));
 
   // set config
   let config = 0;
-  for (let [key, value] of Object.entries(co2Config))
-    if (m.includes(key))
+  for (let [key, value] of Object.entries(productConfig))
+    if (buyConfig.config.includes(key))
+      // @ts-ignore
       config = setBits(config, value.internVal << value.internPos); // get config data
+
   n = setBits(
     n,
     config << (lengths.ver + lengths.prod + lengths.id + lengths.count)
@@ -97,64 +134,57 @@ function MeaningToNumber(prod, m, count, version) {
         lengths.prod +
         lengths.id +
         lengths.count +
-        lengths.congfig)
+        lengths.config)
   );
 
   return n;
 }
 
 // @ts-ignore
-function NumberToMeaning(n) {
+function NumberToMeaning(productConfig, n) {
   let str = "";
+
+  // get version
+  str += "Code version: " + getBits(n, 0, lengths.ver);
+  // remove version
+  n = removeBits(n, 0, lengths.ver);
+
+  // get product id
+  str += ", Product id: " + getBits(n, 0, lengths.prod);
+  // remove product id
+  n = removeBits(n, 0, lengths.prod);
+
+  // get ID
+  str += ", Buy id: " + getBits(n, 0, lengths.id);
+  // remove ID
+  n = removeBits(n, 0, lengths.id);
+
+  // get count
+  str += ", Count: " + getBits(n, 0, lengths.count);
+  // remove count
+  n = removeBits(n, 0, lengths.count);
+
+  // get config
+  for (let [key, value] of Object.entries(productConfig))
+    // @ts-ignore
+    if (value.internPos !== undefined && getBit(n, value.internPos) == value.internVal) str += ", " + key;
+  // remove config
+  n = removeBits(n, 0, lengths.config);
 
   // get parity
   str +=
-    "parity: " +
+    ", Parity: " +
     getBits(
       n,
-      lengths.ver + lengths.prod + lengths.id + lengths.count + lengths.congfig,
+      0,
       lengths.parity
     );
   // remove parity
   n = clearBits(
     n,
-    lengths.ver + lengths.prod + lengths.id + lengths.count + lengths.congfig,
+    0,
     lengths.parity
   );
-
-  console.log("1", n.toString(2));
-
-  // get version
-  str += ", ver: " + getBits(n, 0, lengths.ver);
-  // remove version
-  n = removeBits(n, 0, lengths.ver);
-
-  console.log("2", n.toString(2));
-
-  // get product
-  str += ", prod: " + getBits(n, 0, lengths.prod);
-  // remove product
-  n = removeBits(n, 0, lengths.prod);
-
-  console.log("3", n.toString(2));
-
-  // get ID
-  str += ", id: " + getBits(n, 0, lengths.id);
-  // remove ID
-  n = removeBits(n, 0, lengths.id);
-
-  console.log("4", n.toString(2));
-
-  // get count
-  str += ", count: " + getBits(n, 0, lengths.count);
-  // remove count
-  n = removeBits(n, 0, lengths.count);
-
-  console.log("5", n.toString(2));
-
-  // get config
-  for (let [key, value] of Object.entries(co2Config))
-    if (getBit(n, value.internPos) == value.internVal) str += ", " + key;
 
   return str;
 }
@@ -190,8 +220,8 @@ const removeBits = (n, posStart, count) =>
 const getParity = (n) => ((n.toString(2).split("1") ?? []).length - 1) & 1;
 // #endregion
 
-console.log("input: " + input.toString());
-const output = MeaningToNumber(produktCo2, input, input2, 1);
+console.log("input:", buyConfig);
+const output = MeaningToNumber(co2Config, buyConfig, 1);
 console.log(
-  output + " (" + output.toString(2) + ") => " + NumberToMeaning(output)
+  output + " (" + output.toString(2) + ") => " + NumberToMeaning(co2Config, output)
 );
