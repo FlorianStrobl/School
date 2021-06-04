@@ -15,10 +15,10 @@ const String currentVersion = "Ver 1.4";
 const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
 const byte tx_pin = 4;  // the arduino TX pin and sensor RX pin
 const byte led_pins[3] = {6, 9, 3}; // (R, G, B) the pins where the LED is on
-const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2, contrast = 6;
+const int rs = 12, en = 11, d4 = 9, d5 = 10, d6 = 3, d7 = 2, contrast = 6;
 
 // settings
-const bool lcdDisplay = true; // set the output mode
+const bool lcdDisplay = false; // set the output mode
 const bool Warm = false; // let the sensor warm at start
 const bool AutoCalibrate = false; // calibare the sensor at start (only for outside use)
 const short Delay = 1000; // time the program waits until next LED refresh
@@ -46,7 +46,7 @@ int temp = 0; // current temperature in C
 void setup() {
   // starts connection to an PC if available
   Serial.begin(9600);
-  
+
   // set the sensor settings
   mhz19.begin(rx_pin, tx_pin);
   mhz19.setAutoCalibration(AutoCalibrate);
@@ -189,7 +189,7 @@ void SetNoColor() {
 // sets the LCD to no color
 void SetNoColorLCD() {
   lcd.clear();
-  lcd.cursor(0, 0);
+  lcd.setCursor(0, 0);
 }
 
 // three white blinks from the LED
@@ -206,16 +206,43 @@ void StartAnimation() {
 
 // three white blinks from the LED
 void StartAnimationLCD() {
-  lcd.print("Start - ");
-  lcd.print(currentVersion);
+  lcd.print("CO2 Sensor");
+  lcd.setCursor(0, 1);
+  lcd.print("Start - " + (String)currentVersion);
+  delay(2500);
 }
 
 void SetDisplay(int ppm, short c) {
   if (c == 3) return;
+  SetNoColorLCD();
   if (c == 4) {
     lcd.print("overheating");
     return;
   }
-  
-  lcd.print("CO2" + (String)ppm);
+
+  lcd.print("CO2: " + (String)ppm + "ppm");
+  bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
+  bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
+  if (firstStart == false && (threshold1 || threshold2))
+    return;
+
+  lcd.setCursor(0, 1);
+  switch (c) {
+    case 3:
+      Serial.println("No change");
+      // last color
+      break;
+    case 0:
+        lcd.print("Normaler Wert");
+      Serial.println("Green");
+      break;
+    case 1:
+        lcd.print("Hoher Wert");
+      Serial.println("Orange");
+      break;
+    case 2:
+    lcd.print("Kritischer Wert");
+      Serial.println("Red");
+      break;
+  }
 }
