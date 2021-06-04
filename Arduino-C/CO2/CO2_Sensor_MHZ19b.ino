@@ -7,24 +7,29 @@
 
 // the library for the sensor
 #include <MHZ19_uart.h>
+#include <LiquidCrystal.h>
 
-// the sensor
-MHZ19_uart mhz19;
-
-const String currentVersion = "Version 1.2";
+const String currentVersion = "Ver 1.4";
 
 // pins
 const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
 const byte tx_pin = 4;  // the arduino TX pin and sensor RX pin
 const byte led_pins[3] = {6, 9, 3}; // (R, G, B) the pins where the LED is on
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2, contrast = 6;
 
 // settings
+const bool lcdDisplay = true; // set the output mode
 const bool Warm = false; // let the sensor warm at start
 const bool AutoCalibrate = false; // calibare the sensor at start (only for outside use)
 const short Delay = 1000; // time the program waits until next LED refresh
 const short limitPPM1 = 800; // values below that, makes the LED green
 const short limitPPM2 = 1000; // values below that, makes the LED orange, and values over that makes it red
 const byte limitThreshold = 30; // +-ppm for the sensor
+
+// the sensor
+MHZ19_uart mhz19;
+// the display
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 // the three colors
 const byte c1[3] = {0, 255, 0}; // color for state 1 (Green)
@@ -41,24 +46,31 @@ int temp = 0; // current temperature in C
 void setup() {
   // starts connection to an PC if available
   Serial.begin(9600);
-
+  
   // set the sensor settings
   mhz19.begin(rx_pin, tx_pin);
   mhz19.setAutoCalibration(AutoCalibrate);
 
-  StartAnimation();
+  if (lcdDisplay == true) {
+    lcd.begin(16, 2);
+    analogWrite(contrast, 50);
+    StartAnimationLCD();
+  } else StartAnimation();
 
   // let the sensor warm up at start
   while ( mhz19.isWarming() && Warm ) {
     Serial.print("MH-Z19 now warming up - status:"); Serial.println(mhz19.getStatus());
-    analogWrite(led_pins[2], 255);
+    if (lcdDisplay) lcd.print("Warming");
+    else analogWrite(led_pins[2], 255);
     delay(Delay / 2);
-    SetNoColor(); // "deactivates" the LED
+    if (lcdDisplay) SetNoColorLCD(); // "deactivates" the LED
+    else SetNoColor();
     delay(Delay / 2);
   }
 
   // reset the color
-  SetNoColor();
+  if (lcdDisplay) SetNoColorLCD();
+  else SetNoColor();
 
   Serial.println(currentVersion);
 }
@@ -72,7 +84,9 @@ void loop() {
   // check if error
   if (mhz19.getStatus() != 0) {
     Serial.println("error");
-    ErrorColor();
+    lcd.clear();
+    if (lcdDisplay) ErrorColorLCD();
+    else ErrorColor();
     return;
   }
 
@@ -87,7 +101,8 @@ void loop() {
   Serial.print("color: ");
 
   // get the color variable acording to the ppm & set the LED color (does print the color name in the console)
-  SetColor(GetColor(co2ppm, temp));
+  if (!lcdDisplay) SetColor(GetColor(co2ppm, temp));
+  else SetDisplay(co2ppm, GetColor(co2ppm, temp));
 
   if (firstStart) firstStart = false;
 }
@@ -96,8 +111,8 @@ void loop() {
 byte GetColor(int ppm, int temperatur) {
   // high or low temperatur
   if (temperatur >= 50 || temperatur <= 0) {
-    Serial.println("Sensor temperaturs are too high/low");
-    return 4;
+    //Serial.println("Sensor temperaturs are too high/low");
+    //return 4;
   }
 
   // goes in it, if the values are in the setted threshold
@@ -159,10 +174,22 @@ void ErrorColor() {
     analogWrite(led_pins[i], errorColor[i]);
 }
 
+// sets the LCD to the error color
+void ErrorColorLCD() {
+  lcd.clear();
+  lcd.print("Error");
+}
+
 // sets the LED to no color
 void SetNoColor() {
   for (byte i = 0; i < 3; i++)
     analogWrite(led_pins[i], 0);
+}
+
+// sets the LCD to no color
+void SetNoColorLCD() {
+  lcd.clear();
+  lcd.cursor(0, 0);
 }
 
 // three white blinks from the LED
@@ -175,4 +202,20 @@ void StartAnimation() {
     SetNoColor();
     delay(500);
   }
+}
+
+// three white blinks from the LED
+void StartAnimationLCD() {
+  lcd.print("Start - ");
+  lcd.print(currentVersion);
+}
+
+void SetDisplay(int ppm, short c) {
+  if (c == 3) return;
+  if (c == 4) {
+    lcd.print("overheating");
+    return;
+  }
+  
+  lcd.print("CO2" + (String)ppm);
 }
