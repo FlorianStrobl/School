@@ -5,6 +5,8 @@
 // This is the code to let an mhz19b co2 sensor adjust the color of an LED.
 // Important: all values have about 90 sec delay. The sensor has a max of 5000ppm and you shouldn't use the data if the temperatur is above 50 degree.
 
+// Library: https://github.com/crisap94/MHZ19
+
 // the library for the sensor
 #include <MHZ19_uart.h>
 #include <LiquidCrystal.h>
