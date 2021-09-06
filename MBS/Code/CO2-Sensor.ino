@@ -1,5 +1,5 @@
 // A Co2 projekct - 2020/2021
-// Coding: Florian Crafter
+// Coding and lead developper: Florian Crafter
 // 3D Printing: Emile
 // Soldering/Logistics: Lajosh
 // This is the code to let an mhz19b co2 sensor adjust the color of an LED.
@@ -11,7 +11,7 @@
 #include <MHZ19_uart.h>
 #include <LiquidCrystal.h>
 
-const String currentVersion = "Ver 1.4";
+const String currentVersion = "Ver 1.4a";
 
 // pins
 const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
@@ -54,10 +54,10 @@ void setup() {
   mhz19.setAutoCalibration(AutoCalibrate);
 
   if (lcdDisplay == true) {
-    lcd.begin(16, 2);
-    analogWrite(contrast, 50);
-    StartAnimationLCD();
-  } else StartAnimation();
+    lcd.begin(16, 2); // initialize with size
+    analogWrite(contrast, 100); // set the contrast
+    StartAnimationLCD(); // start the animation
+  } else StartAnimationLED();
 
   // let the sensor warm up at start
   while ( mhz19.isWarming() && Warm ) {
@@ -195,7 +195,7 @@ void SetNoColorLCD() {
 }
 
 // three white blinks from the LED
-void StartAnimation() {
+void StartAnimationLED() {
   for (byte i = 0; i < 3; i++) {
     for (byte y = 0; y < 3; y++)
       analogWrite(led_pins[y], 255);
