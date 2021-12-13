@@ -7,7 +7,7 @@
 // The temperatur sensor in it is very bad
 // If it starts with a constant value, you will have to wait a bit until it respons
 
-// Library: https://github.com/crisap94/MHZ19
+// Library: https://github.com/nara256/mhz19_uart
 
 // the library for the sensor
 #include <MHZ19_uart.h>
