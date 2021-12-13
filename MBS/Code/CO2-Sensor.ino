@@ -3,35 +3,31 @@
 // 3D Printing: Emile
 // Soldering/Logistics: Lajosh
 // This is the code to let an mhz19b co2 sensor adjust the color of an LED.
-// Important: all values have about 90 sec delay. The sensor has a max of 5000ppm and you shouldn't use the data if the temperatur is above 50 degree.
+// Important: all values have about 90+ sec delay. The sensor has a max of 5000ppm and you shouldn't use the data if the temperatur is above 50 degree.
+// The temperatur sensor in it is very bad
+// If it starts with a constant value, you will have to wait a bit until it respons
 
-// Library: https://github.com/nara256/mhz19_uart
+// Library: https://github.com/crisap94/MHZ19
 
 // the library for the sensor
 #include <MHZ19_uart.h>
 #include <LiquidCrystal.h>
 
-const String currentVersion = "Ver 1.4a";
+const String currentVersion = "Ver 1.6a";
 
 // pins
-const byte rx_pin = 5;  // the arduino RX pin and sensor TX pin
-const byte tx_pin = 4;  // the arduino TX pin and sensor RX pin
+const byte rx_pin = 5, tx_pin = 4;  // the arduino RX pin and sensor TX pin + the arduino TX pin and sensor RX pin
 const byte led_pins[3] = {6, 9, 3}; // (R, G, B) the pins where the LED is on
 const int rs = 12, en = 11, d4 = 9, d5 = 10, d6 = 3, d7 = 2, contrast = 6;
 
 // settings
-const bool lcdDisplay = false; // set the output mode
+const bool lcdDisplay = true; // set the output mode
 const bool Warm = false; // let the sensor warm at start
 const bool AutoCalibrate = false; // calibare the sensor at start (only for outside use)
 const short Delay = 1000; // time the program waits until next LED refresh
 const short limitPPM1 = 800; // values below that, makes the LED green
 const short limitPPM2 = 1000; // values below that, makes the LED orange, and values over that makes it red
 const byte limitThreshold = 30; // +-ppm for the sensor
-
-// the sensor
-MHZ19_uart mhz19;
-// the display
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 // the three colors
 const byte c1[3] = {0, 255, 0}; // color for state 1 (Green)
@@ -43,6 +39,12 @@ const byte errorColor[3] = {0, 0, 255}; // Color for state ERROR (Blue)
 bool firstStart = true; // bool for the first start
 int co2ppm = 0; // current co2 value in ppm
 int temp = 0; // current temperature in C
+bool lastDisplayDraw = false;
+
+// the sensor
+MHZ19_uart mhz19;
+// the display
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 // fires up on arduino start and set the settigns
 void setup() {
@@ -53,19 +55,19 @@ void setup() {
   mhz19.begin(rx_pin, tx_pin);
   mhz19.setAutoCalibration(AutoCalibrate);
 
-  if (lcdDisplay == true) {
+  if (lcdDisplay) {
     lcd.begin(16, 2); // initialize with size
     analogWrite(contrast, 100); // set the contrast
     StartAnimationLCD(); // start the animation
   } else StartAnimationLED();
 
-  // let the sensor warm up at start
+  // let the sensor warm up and calibrate at start
   while ( mhz19.isWarming() && Warm ) {
     Serial.print("MH-Z19 now warming up - status:"); Serial.println(mhz19.getStatus());
-    if (lcdDisplay) lcd.print("Warming");
+    if (lcdDisplay) lcd.print("Warming"); // Warming msg on LED/LCD
     else analogWrite(led_pins[2], 255);
     delay(Delay / 2);
-    if (lcdDisplay) SetNoColorLCD(); // "deactivates" the LED
+    if (lcdDisplay) SetNoColorLCD(); // "deactivates" the LED/LCD
     else SetNoColor();
     delay(Delay / 2);
   }
@@ -74,13 +76,14 @@ void setup() {
   if (lcdDisplay) SetNoColorLCD();
   else SetNoColor();
 
-  Serial.println(currentVersion);
+  Serial.println("Start version: " + currentVersion);
 }
 
 // the loop
 void loop() {
   delay(Delay); // wait
 
+  lastDisplayDraw = !lastDisplayDraw;
   Serial.println("------------");
 
   // check if error
@@ -104,7 +107,7 @@ void loop() {
 
   // get the color variable acording to the ppm & set the LED color (does print the color name in the console)
   if (!lcdDisplay) SetColor(GetColor(co2ppm, temp));
-  else SetDisplay(co2ppm, GetColor(co2ppm, temp));
+  else SetDisplay(GetColor(co2ppm, temp), co2ppm);
 
   if (firstStart) firstStart = false;
 }
@@ -118,9 +121,9 @@ byte GetColor(int ppm, int temperatur) {
   }
 
   // goes in it, if the values are in the setted threshold
-  bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
-  bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
-  if (firstStart == false && (threshold1 || threshold2)) {
+  bool threshold1 = (limitPPM1 - limitThreshold) < ppm && ppm < (limitPPM1 + limitThreshold);
+  bool threshold2 = (limitPPM2 - limitThreshold) < ppm && ppm < (limitPPM2 + limitThreshold);
+  if (!firstStart && (threshold1 || threshold2)) {
     Serial.println("Values are in threshold");
     return 3;
   }
@@ -130,15 +133,14 @@ byte GetColor(int ppm, int temperatur) {
     return 0;
   else if (ppm >= limitPPM1 && ppm < limitPPM2)
     return 1;
-  else
-    return 2;
+  else return 2;
 }
 
 // sets the color of the LED
 void SetColor(short c) {
   switch (c) {
     case 4:
-      Serial.println("Wrong temperatur");
+      Serial.println("Invalid temperatur");
       for (byte i = 0; i < 3; i++) {
         for (byte y = 0; y < 3; y++)
           analogWrite(led_pins[y], 255);
@@ -149,8 +151,8 @@ void SetColor(short c) {
       }
       break;
     case 3:
-      Serial.println("No color");
-      // last color
+      Serial.println("No color change");
+      // color doesnt get updated => last color gets drawen
       break;
     case 0:
       Serial.println("Green");
@@ -176,16 +178,66 @@ void ErrorColor() {
     analogWrite(led_pins[i], errorColor[i]);
 }
 
-// sets the LCD to the error color
-void ErrorColorLCD() {
-  lcd.clear();
-  lcd.print("Error");
-}
-
 // sets the LED to no color
 void SetNoColor() {
   for (byte i = 0; i < 3; i++)
     analogWrite(led_pins[i], 0);
+}
+
+// three white blinks from the LED
+void StartAnimationLED() {
+  for (byte i = 0; i < 3; i++) {
+    for (byte y = 0; y < 3; y++)
+      analogWrite(led_pins[y], 255); // all leds white
+    delay(500);
+
+    SetNoColor(); // deactivate the led
+    delay(500);
+  }
+}
+
+String lastValue = "";
+void SetDisplay(short c, int ppm) {
+  // if (c == 3) return;
+  SetNoColorLCD();
+  if (c == 4) {
+    lcd.print("overheating");
+    return;
+  }
+
+  String value = "CO2: " + (String)ppm + "ppm";
+  lcd.print(value + "   ");
+
+  lcd.setCursor(0, 1);
+  switch (c) {
+    case 3:
+      Serial.println("Old value");
+      // last color
+      break;
+    case 0:
+      lastValue = "Normaler Wert";
+      Serial.println("Green");
+      break;
+    case 1:
+      lastValue = "Hoher Wert";
+      Serial.println("Orange");
+      break;
+    case 2:
+      lastValue = "Kritischer Wert";
+      Serial.println("Red");
+      break;
+  }
+
+  lcd.print(lastValue);
+}
+
+// sets the LCD to the error color
+void ErrorColorLCD() {
+  lcd.clear();
+  lcd.print("Error");
+  if (lastDisplayDraw) lcd.println("          ");
+  lcd.setCursor(0, 1); // go to the second line
+  if (!lastDisplayDraw) lcd.println("               " );
 }
 
 // sets the LCD to no color
@@ -195,56 +247,9 @@ void SetNoColorLCD() {
 }
 
 // three white blinks from the LED
-void StartAnimationLED() {
-  for (byte i = 0; i < 3; i++) {
-    for (byte y = 0; y < 3; y++)
-      analogWrite(led_pins[y], 255);
-    delay(500);
-
-    SetNoColor();
-    delay(500);
-  }
-}
-
-// three white blinks from the LED
 void StartAnimationLCD() {
   lcd.print("CO2 Sensor");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(0, 1); // go to the second line
   lcd.print("Start - " + (String)currentVersion);
   delay(2500);
-}
-
-void SetDisplay(int ppm, short c) {
-  if (c == 3) return;
-  SetNoColorLCD();
-  if (c == 4) {
-    lcd.print("overheating");
-    return;
-  }
-
-  lcd.print("CO2: " + (String)ppm + "ppm");
-  bool threshold1 = limitPPM1 - limitThreshold < ppm && ppm < limitPPM1 + limitThreshold;
-  bool threshold2 = limitPPM2 - limitThreshold < ppm && ppm < limitPPM2 + limitThreshold;
-  if (firstStart == false && (threshold1 || threshold2))
-    return;
-
-  lcd.setCursor(0, 1);
-  switch (c) {
-    case 3:
-      Serial.println("No change");
-      // last color
-      break;
-    case 0:
-        lcd.print("Normaler Wert");
-      Serial.println("Green");
-      break;
-    case 1:
-        lcd.print("Hoher Wert");
-      Serial.println("Orange");
-      break;
-    case 2:
-    lcd.print("Kritischer Wert");
-      Serial.println("Red");
-      break;
-  }
 }
