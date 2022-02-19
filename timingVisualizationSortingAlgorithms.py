@@ -285,22 +285,22 @@ class Sorting:
                 timerObj = Sorting.timer()  # start timer
 
             for i in range(1, len(list)):
-                for y in range(i, 0, -1):
-                    if list[y] < list[y - 1]:
+                for x in range(i, 0, -1):
+                    if list[x] < list[x - 1]:
 
-                        oldYValue = list[y]
-                        list[y] = list[y - 1]
-                        list[y - 1] = oldYValue
+                        oV = list[x]
+                        list[x] = list[x - 1]
+                        list[x - 1] = oV
                     else:
                         break
 
                     # draw array to screen
                     if (drawToDisplay):
                         if imperativ:
-                            drawArray(list, y, 0.005)
+                            drawArray(list, x, 0.005)
                         else:
                             Sorting.visualization.drawArray(
-                                list, y, 0.005)
+                                list, x, 0.005)
 
             if imperativ:
                 print("Ended timer with: " +
