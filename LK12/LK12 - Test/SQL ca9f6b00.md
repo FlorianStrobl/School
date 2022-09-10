@@ -1,0 +1,2 @@
+- [Tabellenoperatoren](<Tabellenoperatoren a98fec7a.md>)
+- [Aggregatfunktionen](<Aggregatfunktionen dee3f037.md>)

@@ -1,0 +1,4 @@
+- [Datenbanksysteme](<Datenbanksysteme d27ec3e5.md>)
+- [Datenbankentwurf](<Datenbankentwurf 28d942f1.md>)
+- [SQL](<SQL ca9f6b00.md>)
+- [Quellen](<Quellen 10dc7c23.md>)
